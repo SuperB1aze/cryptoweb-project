@@ -1,0 +1,1 @@
+A repository for small pet project, targeted for learning the basics of working with FastAPI + SQLAlchemy and alembic. Feel free to comment and leave helpful advices on improvements/fixes.
