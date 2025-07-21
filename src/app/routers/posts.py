@@ -1,26 +1,46 @@
 from fastapi import APIRouter, HTTPException
-from src.app.schemas.posts import BookInfo, books_list
+from app.schemas.users import UserCreate, SuperUserCreate, UserRead, users_list_test
 
-router = APIRouter(prefix="/books", tags=["Books"])
+router_users = APIRouter(prefix="/users", tags=["Users"])
 
-@router.get("/")
-def booklist():
-    return books_list
+def user_entry(new_user, role):
+    return {
+        "id": len(users_list_test) + 1,
+        "tag": new_user.tag,
+        "name": new_user.name,
+        "email": new_user.email,
+        "password": new_user.password,
+        "age": new_user.age,
+        "role": role
+    }
 
-@router.get("/{books_id}", summary="list")
-def bookid_check(books_id: int):
-    for book in books_list:
-        if book["id"] == books_id:
-            return book
+@router_users.get("/")
+def userslist():
+    return users_list_test
 
-    raise HTTPException(status_code=404)
+@router_users.get("/profile/{user_id}", summary="check user's profile")
+def show_profile(user_id: int):
+    for user in users_list_test:
+        if user["id"] == user_id:
+            return user
+    raise HTTPException(status_code = 404, detail="This user does not exist.")
 
-@router.post("/new_book", summary="new book")
-def create_book(new_book: BookInfo):
-    books_list.append({
-        "id": len(books_list) + 1,
-        "name": new_book.name,
-        "author": new_book.author
-    })
+@router_users.post("/create_user", summary="create a user")
+def create_user(new_user: UserCreate):
+    users_list_test.append(user_entry(new_user, role="User"))
+    return users_list_test
 
-    return {"success": True}
+@router_users.post("/create_superuser", summary="create a superuser")
+def create_user(new_user: SuperUserCreate):
+    users_list_test.append(user_entry(new_user, role=new_user.role))
+    return users_list_test
+
+@router_users.post("/profile/{user_id}/edit", summary="edit user's profile")
+def edit_profile(edit_user: UserRead, user_id: int):
+    for user in users_list_test:
+        if user["id"] == user_id:
+            user["description"] = edit_user.description
+            user["city"] = edit_user.city
+            user["country"] = edit_user.country
+        return user
+    raise HTTPException(status_code = 404, detail="This user does not exist.")
