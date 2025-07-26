@@ -23,7 +23,7 @@ class SuperUserCreate(UserCreate):
             raise ValueError("This role does not exist")
         return profile_role
 
-class UserRead(BaseModel):
+class UserBio(BaseModel):
     description: str | None = Field(max_length=500, description="Your description can only be up to 500 characters.")
     city: str | None
     country: str | None
