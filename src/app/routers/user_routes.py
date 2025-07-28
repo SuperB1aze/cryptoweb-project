@@ -5,6 +5,7 @@ from datetime import datetime
 router_user = APIRouter(prefix="/users", tags=["Users"])
 
 class UserFunctions():
+    @staticmethod
     def user_exist(user_id: int):
         for user in users_list_test:
             if user["id"] == user_id:
@@ -12,7 +13,7 @@ class UserFunctions():
             
         raise HTTPException(status_code = 404, detail="This user does not exist.")
 
-
+    @staticmethod
     def user_entry(new_user, role):
         return {
             "id": len(users_list_test) + 1,
@@ -39,7 +40,7 @@ def create_user(new_user: UserCreate):
     return users_list_test
 
 @router_user.post("/create_superuser", summary="create a superuser")
-def create_user(new_user: SuperUserCreate):
+def create_superuser(new_user: SuperUserCreate):
     users_list_test.append(UserFunctions.user_entry(new_user, role=new_user.role))
     return users_list_test
 

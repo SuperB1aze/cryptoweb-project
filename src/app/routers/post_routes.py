@@ -6,6 +6,7 @@ from datetime import datetime
 router_post = APIRouter(prefix="/posts", tags=["Posts"])
 
 class PostFunctions():
+    @staticmethod
     def post_exist(post_id: int, user: dict = Depends(UserFunctions.user_exist)):
         for post in posts_list_test:
             if post["tag"] == user["tag"] and post["id"] == post_id:
@@ -48,7 +49,7 @@ def new_post(post: PostDefaultInfo, user: dict = Depends(UserFunctions.user_exis
     return posts_list_test
 
 @router_post.post("/{user_id}/{post_id}/edit", summary="edit a specific post")
-def new_post(edited_content: PostDefaultInfo, post: dict = Depends(PostFunctions.post_exist)):
+def edit_post(edited_content: PostDefaultInfo, post: dict = Depends(PostFunctions.post_exist)):
     post.update({"edited_at": datetime.now(), "text_content": edited_content.text_content})
     return post
 
