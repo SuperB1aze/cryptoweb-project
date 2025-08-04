@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import uvicorn, sys, os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "src")))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 from src.app.routers import user_routes, post_routes
 
 app = FastAPI()
