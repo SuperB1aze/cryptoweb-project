@@ -4,7 +4,7 @@ from sqlalchemy import String, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from config import settings
+from src.config import settings
 
 engine = create_async_engine(
     url = settings.DATABASE_URL_asyncpg,
@@ -18,7 +18,7 @@ async def main():
         print(res.all())
 
 
-asyncio.run(main())
+# asyncio.run(main())
 
 class Base(DeclarativeBase):
     repr_cols = tuple()

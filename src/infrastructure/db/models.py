@@ -1,7 +1,7 @@
 from datetime import datetime
 import enum
 from typing import Annotated
-from database import Base
+from src.database import Base
 
 from sqlalchemy import ForeignKey, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -33,7 +33,7 @@ class UsersOrm(Base):
     country: Mapped[str | None]
     description: Mapped[Annotated[str, mapped_column(String(500))] | None]
 
-    resumes: Mapped[list["PostsOrm"]] = relationship()
+    posts: Mapped[list["PostsOrm"]] = relationship(back_populates="users")
     repr_col = ("id", "tag", "role", "created_at")
 
 class PostsOrm(Base):
@@ -45,5 +45,5 @@ class PostsOrm(Base):
     updated_at: Mapped[updated_at]
     text_content: Mapped[Annotated[str, mapped_column(String(1000), nullable=False)]]
 
-    users: Mapped["UsersOrm"] = relationship()
+    users: Mapped["UsersOrm"] = relationship(back_populates="posts")
     repr_col = ("id", "user_id", "text_content")
