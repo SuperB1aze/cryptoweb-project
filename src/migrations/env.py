@@ -12,7 +12,7 @@ from alembic import context
 
 from src.config import settings
 from src.infrastructure.db.models import *
-from src.database import Base
+from src.infrastructure.db.base import Base
 
 config = context.config
 

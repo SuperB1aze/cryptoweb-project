@@ -1,52 +1,31 @@
-from fastapi import APIRouter, HTTPException, Depends
-from app.schemas.user import UserCreate, SuperUserCreate, UserBio, users_list_test
-from datetime import datetime
+from fastapi import APIRouter
+from app.schemas.user import UserCreateAddDTO, UserBioAddDTO, UserFullInfoDTO
+from src.domain.services.user_service import UserServiceORM
+from src.infrastructure.db.models import Role
 
 router_user = APIRouter(prefix="/users", tags=["Users"])
 
-class UserFunctions():
-    @staticmethod
-    def user_exist(user_id: int):
-        for user in users_list_test:
-            if user["id"] == user_id:
-                return user
-            
-        raise HTTPException(status_code = 404, detail="This user does not exist.")
+@router_user.get("/", summary="get the list of all users", response_model=list[UserFullInfoDTO])
+async def userslist():
+    user_list = await UserServiceORM.show_all_users()
+    return user_list
 
-    @staticmethod
-    def user_entry(new_user, role):
-        return {
-            "id": len(users_list_test) + 1,
-            "tag": new_user.tag,
-            "name": new_user.name,
-            "email": new_user.email,
-            "password": new_user.password,
-            "age": new_user.age,
-            "role": role,
-            "creation_date": datetime.now()
-        }
+@router_user.get("/{user_id}", summary="check user's profile", response_model=UserFullInfoDTO)
+async def show_profile(user_id: int):
+        user = await UserServiceORM.show_profile(user_id)
+        return user
 
-@router_user.get("/", summary="get the list of all users")
-def userslist():
-    return users_list_test
+@router_user.post("/create_user", summary="create a user", response_model=UserFullInfoDTO)
+async def create_user(new_user: UserCreateAddDTO):
+    created_user = await UserServiceORM.new_user(new_user)
+    return created_user
 
-@router_user.get("/{user_id}", summary="check user's profile")
-def show_profile(user: dict = Depends(UserFunctions.user_exist)):
-    return user
+@router_user.post("/create_superuser", summary="create a superuser", response_model=UserFullInfoDTO)
+async def create_superuser(new_user: UserCreateAddDTO, superuser_role: Role):
+    created_superuser = await UserServiceORM.new_superuser(new_user, superuser_role)
+    return created_superuser
 
-@router_user.post("/create_user", summary="create a user")
-def create_user(new_user: UserCreate):
-    users_list_test.append(UserFunctions.user_entry(new_user, role="User"))
-    return users_list_test
-
-@router_user.post("/create_superuser", summary="create a superuser")
-def create_superuser(new_user: SuperUserCreate):
-    users_list_test.append(UserFunctions.user_entry(new_user, role=new_user.role))
-    return users_list_test
-
-@router_user.post("/{user_id}/edit", summary="edit user's profile")
-def edit_profile(edit_user: UserBio, user: dict = Depends(UserFunctions.user_exist)):
-    user["description"] = edit_user.description
-    user["city"] = edit_user.city
-    user["country"] = edit_user.country
-    return user
+@router_user.patch("/{user_id}/edit", summary="edit user's profile", response_model=UserFullInfoDTO)
+async def edit_profile(user_id: int, edited_user_info: UserBioAddDTO):
+    edited_user = await UserServiceORM.edit_profile(user_id, edited_user_info)
+    return edited_user
