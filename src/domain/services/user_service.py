@@ -50,3 +50,13 @@ class UserServiceORM:
             await session.commit()
             await session.refresh(user)
             return user
+        
+    @staticmethod
+    async def delete_user(user_id: int):
+        async with async_session_factory() as session:
+            user = await session.get(UsersOrm, user_id)
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            await session.delete(user)
+            await session.commit()
+            return {"detail": "Successfully deleted"}

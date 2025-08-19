@@ -29,3 +29,8 @@ async def create_superuser(new_user: UserCreateAddDTO, superuser_role: Role):
 async def edit_profile(user_id: int, edited_user_info: UserBioAddDTO):
     edited_user = await UserServiceORM.edit_profile(user_id, edited_user_info)
     return edited_user
+
+@router_user.delete("/{user_id}/delete", summary="delete a specific user")
+async def delete_user(user_id: int):
+    deleted_user = await UserServiceORM.delete_user(user_id)
+    return deleted_user

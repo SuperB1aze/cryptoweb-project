@@ -11,8 +11,7 @@ name_tag = Annotated[str, mapped_column(String(20), nullable=False)]
 created_at = Annotated[datetime, mapped_column(server_default=text("TIMEZONE('utc', now())"))]
 updated_at = Annotated[datetime, mapped_column(
         TIMESTAMP(timezone=True),
-        nullable=True,
-        server_onupdate=func.now() )]
+        nullable=True)]
 
 class Role(enum.Enum):
     user = "User"
