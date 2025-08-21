@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 .env
 csv_dummy_data/
+certs/

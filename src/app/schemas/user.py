@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, SecretStr
 from src.infrastructure.db.models import Role
 from datetime import datetime
 
@@ -14,7 +14,7 @@ class UserDefaultInfoAddDTO(BaseModel):
 class UserCreateAddDTO(UserDefaultInfoAddDTO):
     age: int = Field(ge=16, le=120, description="Your age can only be from 16 to 120 years old.")
     email: EmailStr
-    password: str
+    password: SecretStr
 
 class UserBioAddDTO(BaseModel):
     description: str | None = Field(max_length=500, description="Your description can only be up to 500 characters.")

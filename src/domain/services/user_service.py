@@ -1,8 +1,10 @@
 from fastapi import HTTPException
 from sqlalchemy import select
 from src.database import async_session_factory
+from pydantic import EmailStr
 from src.infrastructure.db.models import UsersOrm, Role
 from src.app.schemas.user import UserCreateAddDTO, UserBioAddDTO
+from src.auth_utils import hash_password
 
 class UserServiceORM:
     @staticmethod
@@ -19,11 +21,22 @@ class UserServiceORM:
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
             return user
-    
+        
+    @staticmethod
+    async def show_profile_by_email(email: EmailStr):
+        async with async_session_factory() as session:
+            user = await session.execute(select(UsersOrm).where(UsersOrm.email == email))
+            res_user = user.scalars().first()
+            if not res_user:
+                raise HTTPException(status_code=401, detail="Invalid credentials")
+            return res_user
+
     @staticmethod
     async def new_user(new_user: UserCreateAddDTO):
         async with async_session_factory() as session:
             user = UsersOrm(**new_user.model_dump(), role=Role.user)
+            plain_password = user.password.get_secret_value()
+            user.password = hash_password(plain_password)
             session.add(user) 
             await session.commit()
             await session.refresh(user)
