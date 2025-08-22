@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from src.app.schemas.user import UserDefaultInfoAddDTO
+from src.infrastructure.db.models import Role
 from datetime import datetime
 
 class PostDefaultInfoAddDTO(BaseModel):
@@ -16,3 +17,7 @@ class PostPageInfoDTO(PostDefaultInfoAddDTO):
 
 class PostFullInfoDTO(PostPageInfoDTO):
     user: UserDefaultInfoAddDTO
+
+class PostOwnershipDTO(BaseModel):
+    is_owner: bool
+    role: Role

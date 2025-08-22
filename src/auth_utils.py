@@ -33,7 +33,9 @@ def decode_jwt(encoded: str | bytes,
     decoded = jwt.decode(encoded, key=public_key, algorithms=[algorithm])
     return decoded
 
-def hash_password(password: str):
+def hash_password(password: str | SecretStr):
+    if isinstance(password, SecretStr):
+        password = password.get_secret_value()
     salt = bcrypt.gensalt()
     hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
     return hashed_password.decode("utf-8")

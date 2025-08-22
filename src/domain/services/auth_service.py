@@ -20,8 +20,11 @@ class AuthServiceORM:
         return user
 
     @staticmethod
-    async def user_auth_jwt(user: UserLogin):
-        checked_user = await AuthServiceORM.user_auth_validate(user.email, user.password)
+    async def user_auth_jwt(user: UserLogin, user_exists: bool):
+        if user_exists:
+            checked_user = await AuthServiceORM.user_auth_validate(user.email, user.password)
+        else:
+            checked_user = user
         jwt_payload = {
             "sub": checked_user.email
         }
@@ -38,7 +41,9 @@ class AuthServiceORM:
         return payload
     
     @staticmethod
-    async def get_user_auth_status(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
+    async def get_user_auth_status(credentials: HTTPAuthorizationCredentials | None = Depends(HTTPBearer())):
+        if credentials is None:
+            return None
         checked_payload = await AuthServiceORM.get_token_payload(credentials)
         user_email = checked_payload.get("sub")
         user = await UserServiceORM.show_profile_by_email(user_email)

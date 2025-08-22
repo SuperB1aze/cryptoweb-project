@@ -2,8 +2,8 @@ from fastapi import HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload, joinedload
 from src.database import async_session_factory
-from src.infrastructure.db.models import PostsOrm
-from src.app.schemas.post import PostDefaultInfoAddDTO, PostPageInfoDTO
+from src.infrastructure.db.models import PostsOrm, UsersOrm
+from src.app.schemas.post import PostDefaultInfoAddDTO, PostPageInfoDTO, PostOwnershipDTO
 
 class PostServiceORM:
     @staticmethod
@@ -32,6 +32,22 @@ class PostServiceORM:
             if not post:
                 raise HTTPException(status_code=404, detail="Post not found")
             return res_post
+        
+    @staticmethod
+    async def is_made_by_user(user_id: int, post_id):
+        async with async_session_factory() as session:
+            user_id_key = await session.execute(select(PostsOrm.user_id).where(PostsOrm.id == post_id))
+            res_user_id_key = user_id_key.scalar()
+            if res_user_id_key is None:
+                raise HTTPException(status_code=404, detail="Post not found")
+            user = await session.get(UsersOrm, res_user_id_key)
+            if user is None:
+                raise HTTPException(status_code=404, detail="User not found")
+            ownership = res_user_id_key == user_id
+            return PostOwnershipDTO(
+                is_owner=ownership,
+                role=user.role
+            )
         
     @staticmethod
     async def new_post(user_id: int, new_post: PostDefaultInfoAddDTO):

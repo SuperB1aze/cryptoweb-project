@@ -34,7 +34,7 @@ class AuthJWT(BaseModel):
 
 
 class Settings(BaseSettings):
-    db: DB_Settings = DB_Settings()
+    db: DB_Settings = DB_Settings() # type: ignore
     auth_jwt: AuthJWT = AuthJWT()
 
 settings = Settings()

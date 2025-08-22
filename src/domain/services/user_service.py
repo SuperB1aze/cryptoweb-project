@@ -35,8 +35,7 @@ class UserServiceORM:
     async def new_user(new_user: UserCreateAddDTO):
         async with async_session_factory() as session:
             user = UsersOrm(**new_user.model_dump(), role=Role.user)
-            plain_password = user.password.get_secret_value()
-            user.password = hash_password(plain_password)
+            user.password = hash_password(user.password)
             session.add(user) 
             await session.commit()
             await session.refresh(user)
@@ -46,6 +45,7 @@ class UserServiceORM:
     async def new_superuser(new_user: UserCreateAddDTO, superuser_role: Role):
         async with async_session_factory() as session:
             user = UsersOrm(**new_user.model_dump(), role=superuser_role)
+            user.password = hash_password(user.password)
             session.add(user) 
             await session.commit()
             await session.refresh(user)

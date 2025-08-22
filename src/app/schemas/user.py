@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, EmailStr, SecretStr
 from src.infrastructure.db.models import Role
+from src.app.schemas.auth import TokenInfo
 from datetime import datetime
 
 class UserDefaultInfoAddDTO(BaseModel):
@@ -24,3 +25,7 @@ class UserBioAddDTO(BaseModel):
 class UserFullInfoDTO(UserBioAddDTO, UserCreateAddDTO):
     role: Role
     created_at: datetime
+
+class UserFullInfoWithTokenDTO(BaseModel):
+    user: UserFullInfoDTO
+    token: TokenInfo | None
