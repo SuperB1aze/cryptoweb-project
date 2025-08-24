@@ -1,7 +1,5 @@
 # Cryptoweb Project
 
-[![Version](https://img.shields.io/badge/version-0.0.0_alpha-blue.svg)]()
-
 A small **pet project** aimed at learning the basics of **FastAPI**, **SQLAlchemy**, and **Alembic**.  
 Feel free to comment and leave helpful advice on improvements or fixes.
 
