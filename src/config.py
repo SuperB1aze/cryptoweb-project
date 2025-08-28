@@ -7,19 +7,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class DB_Settings(BaseSettings):
-    DB_HOST: str
-    DB_PORT: int
-    DB_USER: str
-    DB_PASS: str
-    DB_NAME: str
+    DB_HOST: str | None = os.getenv("DB_HOST")
+    DB_PORT: int | None = int(os.getenv("DB_PORT"))
+    DB_USER: str | None = os.getenv("DB_USER")
+    DB_PASS: str | None = os.getenv("DB_PASS")
+    DB_NAME: str | None = os.getenv("DB_NAME")
+    DB_MIGRATION_USER: str | None = os.getenv("DB_MIGRATION_USER")
+    DB_MIGRATION_PASS: str | None = os.getenv("DB_MIGRATION_PASS")
 
     @property
     def DATABASE_URL_asyncpg(self):
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
     
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
-
-db_settings = DB_Settings()  # type: ignore
+    @property
+    def DATABASE_URL_asyncpg_migrations(self):
+        return f"postgresql+asyncpg://{self.DB_MIGRATION_USER}:{self.DB_MIGRATION_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+    
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 PRIVATE_KEY_PATH = BASE_DIR / "certs" / "private.pem"

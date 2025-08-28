@@ -10,6 +10,7 @@ class PostServiceORM:
     async def show_all_posts():
         async with async_session_factory() as session:
             post_list = await session.execute(select(PostsOrm)
+                                              .where(PostsOrm.user.has(is_active=True))
                                               .options(selectinload(PostsOrm.user)))
             res_post_list = post_list.scalars().all()
             return res_post_list
@@ -26,10 +27,11 @@ class PostServiceORM:
     async def show_post(post_id: int):
         async with async_session_factory() as session:
             post = await session.execute(select(PostsOrm)
+                                         .where(PostsOrm.user.has(is_active=True))
                                          .options(joinedload(PostsOrm.user))
                                          .where(PostsOrm.id == post_id))
-            res_post = post.scalars().first()
-            if not post:
+            res_post = post.scalar_one_or_none()
+            if res_post is None:
                 raise HTTPException(status_code=404, detail="Post not found")
             return res_post
         

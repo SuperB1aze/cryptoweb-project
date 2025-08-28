@@ -10,7 +10,7 @@ class UserServiceORM:
     @staticmethod
     async def show_all_users():
         async with async_session_factory() as session:
-            user_list = await session.execute(select(UsersOrm))
+            user_list = await session.execute(select(UsersOrm).where(UsersOrm.is_active == True))
             res_user_list = user_list.scalars().all()
             return res_user_list
 
@@ -18,7 +18,7 @@ class UserServiceORM:
     async def show_profile(user_id: int):
         async with async_session_factory() as session:
             user = await session.get(UsersOrm, user_id)
-            if not user:
+            if not user or user.is_active == False:
                 raise HTTPException(status_code=404, detail="User not found")
             return user
         
@@ -29,6 +29,8 @@ class UserServiceORM:
             res_user = user.scalars().first()
             if not res_user:
                 raise HTTPException(status_code=401, detail="Invalid credentials")
+            if res_user.is_active == False:
+                raise HTTPException(status_code=403, detail="Account is deactivated")
             return res_user
 
     @staticmethod
@@ -65,7 +67,32 @@ class UserServiceORM:
             return user
         
     @staticmethod
-    async def delete_user(user_id: int):
+    async def restore_account(user_id: int):
+        async with async_session_factory() as session:
+            user = await session.get(UsersOrm, user_id)
+            if not user:
+                raise HTTPException(status_code=404, detail="User had never existed or was hard deleted")
+            if user.is_active:
+                raise HTTPException(status_code=409, detail="User is already active")
+            else:
+                user.is_active = True
+            await session.commit()
+            await session.refresh(user)
+            return {"detail": "Successfully restored"}
+        
+    @staticmethod
+    async def soft_delete_user(user_id: int):
+        async with async_session_factory() as session:
+            user = await session.get(UsersOrm, user_id)
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            user.is_active = False
+            await session.commit()
+            await session.refresh(user)
+            return {"detail": "Successfully deleted"}
+        
+    @staticmethod
+    async def hard_delete_user(user_id: int):
         async with async_session_factory() as session:
             user = await session.get(UsersOrm, user_id)
             if not user:

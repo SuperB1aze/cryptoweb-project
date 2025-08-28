@@ -11,9 +11,11 @@ class UserDefaultInfoAddDTO(BaseModel):
         "extra": "forbid",
         "from_attributes": True
     }
-         
-class UserCreateAddDTO(UserDefaultInfoAddDTO):
+
+class UserAgeDTO(BaseModel):
     age: int = Field(ge=16, le=120, description="Your age can only be from 16 to 120 years old.")
+         
+class UserCreateAddDTO(UserAgeDTO, UserDefaultInfoAddDTO):
     email: EmailStr
     password: SecretStr
 
@@ -22,7 +24,7 @@ class UserBioAddDTO(BaseModel):
     city: str | None
     country: str | None
 
-class UserFullInfoDTO(UserBioAddDTO, UserCreateAddDTO):
+class UserFullInfoDTO(UserBioAddDTO, UserAgeDTO, UserDefaultInfoAddDTO):
     role: Role
     created_at: datetime
 

@@ -59,14 +59,28 @@ async def edit_profile(user_id: int, edited_user_info: UserBioAddDTO, current_us
         return edited_user
     raise HTTPException(status_code=403, detail="Not enough permissions")
 
+@router_user.patch("/{user_id}/restore-deleted-account", summary="restore account that had been soft deleted")
+async def restore_deleted_account(user_id: int, current_user = Depends(AuthServiceORM.get_user_auth_status)):
+    if current_user.role == Role.admin:
+        restored_user = await UserServiceORM.restore_account(user_id)
+        return restored_user
+    raise HTTPException(status_code=403, detail="Not enough permissions")
+
 @router_user.delete("/me/delete-account", summary="delete your own profile")
 async def delete_own_profile(current_user = Depends(AuthServiceORM.get_user_auth_status)):
-    deleted_user = await UserServiceORM.delete_user(current_user.id)
+    deleted_user = await UserServiceORM.soft_delete_user(current_user.id)
     return deleted_user
 
-@router_user.delete("/{user_id}/delete-account", summary="delete a specific user")
-async def delete_user(user_id: int, current_user = Depends(AuthServiceORM.get_user_auth_status)):
+@router_user.delete("/{user_id}/delete-account", summary="soft delete a specific user")
+async def delete_user_soft(user_id: int, current_user = Depends(AuthServiceORM.get_user_auth_status)):
     if current_user.role == Role.admin or current_user.id == user_id:
-        deleted_user = await UserServiceORM.delete_user(user_id)
+        deleted_user = await UserServiceORM.soft_delete_user(user_id)
+        return deleted_user
+    raise HTTPException(status_code=403, detail="Not enough permissions")
+
+@router_user.delete("/{user_id}/hard-delete-account", summary="hard delete a specific user")
+async def delete_user_hard(user_id: int, current_user = Depends(AuthServiceORM.get_user_auth_status)):
+    if current_user.role == Role.admin:
+        deleted_user = await UserServiceORM.hard_delete_user(user_id)
         return deleted_user
     raise HTTPException(status_code=403, detail="Not enough permissions")

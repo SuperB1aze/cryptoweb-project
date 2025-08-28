@@ -7,7 +7,6 @@ from sqlalchemy import ForeignKey, String, text, TIMESTAMP
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 int_primary_key = Annotated[int, mapped_column(primary_key=True, autoincrement=True)]
-name_tag = Annotated[str, mapped_column(String(20), nullable=False)]
 created_at = Annotated[datetime, mapped_column(server_default=text("TIMEZONE('utc', now())"))]
 updated_at = Annotated[datetime, mapped_column(
         TIMESTAMP(timezone=True),
@@ -22,11 +21,12 @@ class UsersOrm(Base):
     __tablename__ = "users"
 
     id: Mapped[int_primary_key]
-    tag: Mapped[name_tag]
-    name: Mapped[name_tag]
+    tag: Mapped[Annotated[str, mapped_column(String(20), unique=True, nullable=False)]]
+    name: Mapped[Annotated[str, mapped_column(String(20), nullable=False)]]
     age: Mapped[Annotated[int, mapped_column(nullable=False)]]
     email: Mapped[Annotated[str, mapped_column(unique=True, nullable=False)]]
     password: Mapped[Annotated[str, mapped_column(nullable=False)]]
+    is_active: Mapped[Annotated[bool, mapped_column(default=True, server_default=text("true"))]]
     role: Mapped[Role]
     created_at: Mapped[created_at]
     city: Mapped[str | None]
