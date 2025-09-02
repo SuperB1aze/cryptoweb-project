@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 from pydantic import BaseModel
 from pathlib import Path
 
@@ -12,8 +12,14 @@ class DB_Settings(BaseSettings):
     DB_USER: str | None = os.getenv("DB_USER")
     DB_PASS: str | None = os.getenv("DB_PASS")
     DB_NAME: str | None = os.getenv("DB_NAME")
+
     DB_MIGRATION_USER: str | None = os.getenv("DB_MIGRATION_USER")
     DB_MIGRATION_PASS: str | None = os.getenv("DB_MIGRATION_PASS")
+
+    DB_TEST_HOST: str | None = os.getenv("DB_TEST_HOST")
+    DB_TEST_USER: str | None = os.getenv("DB_TEST_USER")
+    DB_TEST_PASS: str | None = os.getenv("DB_TEST_PASS")
+    DB_TEST_PORT: int | None = int(os.getenv("DB_TEST_PORT"))
 
     @property
     def DATABASE_URL_asyncpg(self):
@@ -22,6 +28,10 @@ class DB_Settings(BaseSettings):
     @property
     def DATABASE_URL_asyncpg_migrations(self):
         return f"postgresql+asyncpg://{self.DB_MIGRATION_USER}:{self.DB_MIGRATION_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+    
+    @property
+    def DATABASE_URL_asyncpg_testing(self):
+        return f"postgresql+asyncpg://{self.DB_TEST_USER}:{self.DB_TEST_PASS}@{self.DB_TEST_HOST}:{self.DB_TEST_PORT}/{self.DB_NAME}"
     
 
 BASE_DIR = Path(__file__).resolve().parent.parent
