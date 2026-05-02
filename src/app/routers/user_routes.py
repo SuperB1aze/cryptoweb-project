@@ -1,6 +1,6 @@
 from typing import Annotated, TypeAlias
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from src.app.schemas.user import UserCreateAddDTO, UserBioAddDTO, UserFullInfoDTO, UserFullInfoWithTokenDTO
@@ -36,15 +36,17 @@ async def show_profile(user_id: int):
     return user
 
 @router_user.post("/create_user", summary="create a user", response_model=UserFullInfoWithTokenDTO)
-async def create_user(new_user: UserCreateAddDTO, credentials: OptionalCredentials):
+async def create_user(new_user: UserCreateAddDTO, response: Response, credentials: OptionalCredentials):
     if credentials is None:
         created_user = await UserServiceORM.new_user(new_user)
-        token = await AuthServiceORM.user_auth_jwt(user=created_user, user_exists=False)
+        access_token = AuthServiceORM.create_access_token(created_user)
+        refresh_token = AuthServiceORM.create_refresh_token(created_user)
+        AuthServiceORM.set_refresh_cookie(response, refresh_token)
         return UserFullInfoWithTokenDTO(
              user = user_info_dto(created_user),
              token = TokenInfo(
-                  access_token=token,
-                  token_type="Bearer"
+                  access_token=access_token,
+                  token_type=AuthServiceORM.token_type
              )
         )
 

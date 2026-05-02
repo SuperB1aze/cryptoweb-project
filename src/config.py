@@ -59,6 +59,7 @@ class AuthJWT(BaseModel):
     passphrase: bytes = get_required_env("PASSPHRASE").encode("utf-8")
     algorithm: str = "RS256"
     access_token_expiration_time: int = 15
+    refresh_token_expiration_days: int = 30
 
 
 class Settings(BaseSettings):
