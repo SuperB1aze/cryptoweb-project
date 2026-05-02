@@ -55,7 +55,7 @@ class AuthServiceORM:
             key=AuthServiceORM.refresh_cookie_name,
             value=refresh_token,
             httponly=True,
-            secure=False,
+            secure=settings.auth_jwt.refresh_cookie_secure,
             samesite="lax",
             max_age=60 * 60 * 24 * settings.auth_jwt.refresh_token_expiration_days,
         )

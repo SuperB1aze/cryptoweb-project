@@ -19,6 +19,13 @@ def get_required_int_env(name: str) -> int:
     return int(get_required_env(name))
 
 
+def get_bool_env(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.lower() in ("1", "true", "yes", "on")
+
+
 class DBSettings(BaseSettings):
     DB_HOST: str = get_required_env("DB_HOST")
     DB_PORT: int = get_required_int_env("DB_PORT")
@@ -60,6 +67,7 @@ class AuthJWT(BaseModel):
     algorithm: str = "RS256"
     access_token_expiration_time: int = 15
     refresh_token_expiration_days: int = 30
+    refresh_cookie_secure: bool = get_bool_env("REFRESH_COOKIE_SECURE")
 
 
 class Settings(BaseSettings):

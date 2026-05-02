@@ -19,6 +19,8 @@ Create `.env` in the repository root. Keep the real values private and take them
 
 The app and Docker Compose need database settings, JWT key paths, and JWT algorithm settings. Do not keep public env templates with real or reusable values.
 
+For local HTTP development, `REFRESH_COOKIE_SECURE` can be omitted or set to `false`. For HTTPS environments, set it to `true`.
+
 PostgreSQL can be published on local port `5433` to avoid conflicts with a locally installed PostgreSQL on `5432`.
 
 ## Start Order
