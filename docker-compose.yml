@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cryptoweb-postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_MIGRATION_USER}
+      POSTGRES_PASSWORD: ${DB_MIGRATION_PASS}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - cryptoweb_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_MIGRATION_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  cryptoweb_postgres_data:

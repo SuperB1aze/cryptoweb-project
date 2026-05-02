@@ -2,25 +2,33 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from src.database import async_session_factory
 from pydantic import EmailStr
+from src.domain.services.base_service import BaseServiceORM
 from src.infrastructure.db.models import UsersOrm, Role
 from src.app.schemas.user import UserCreateAddDTO, UserBioAddDTO
 from src.auth_utils import hash_password
 
-class UserServiceORM:
-    @staticmethod
-    async def show_all_users():
-        async with async_session_factory() as session:
-            user_list = await session.execute(select(UsersOrm).where(UsersOrm.is_active == True))
-            res_user_list = user_list.scalars().all()
-            return res_user_list
+class UserServiceORM(BaseServiceORM):
+    model = UsersOrm
+    not_found_detail = "User not found"
 
-    @staticmethod
-    async def show_profile(user_id: int):
-        async with async_session_factory() as session:
-            user = await session.get(UsersOrm, user_id)
-            if not user or user.is_active == False:
-                raise HTTPException(status_code=404, detail="User not found")
-            return user
+    @classmethod
+    def list_query(cls):
+        return select(UsersOrm).where(UsersOrm.is_active == True)
+
+    @classmethod
+    def detail_query(cls, object_id: int):
+        return select(UsersOrm).where(
+            UsersOrm.id == object_id,
+            UsersOrm.is_active == True,
+        )
+
+    @classmethod
+    async def show_all_users(cls):
+        return await cls.show_all()
+
+    @classmethod
+    async def show_profile(cls, user_id: int):
+        return await cls.show_one(user_id)
         
     @staticmethod
     async def show_profile_by_email(email: EmailStr):
@@ -91,12 +99,6 @@ class UserServiceORM:
             await session.refresh(user)
             return {"detail": "Successfully deleted"}
         
-    @staticmethod
-    async def hard_delete_user(user_id: int):
-        async with async_session_factory() as session:
-            user = await session.get(UsersOrm, user_id)
-            if not user:
-                raise HTTPException(status_code=404, detail="User not found")
-            await session.delete(user)
-            await session.commit()
-            return {"detail": "Successfully deleted"}
+    @classmethod
+    async def hard_delete_user(cls, user_id: int):
+        return await cls.hard_delete(user_id)

@@ -2,18 +2,34 @@ from fastapi import HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload, joinedload
 from src.database import async_session_factory
+from src.domain.services.base_service import BaseServiceORM
 from src.infrastructure.db.models import PostsOrm, UsersOrm
 from src.app.schemas.post import PostDefaultInfoAddDTO, PostPageInfoDTO, PostOwnershipDTO
 
-class PostServiceORM:
-    @staticmethod
-    async def show_all_posts():
-        async with async_session_factory() as session:
-            post_list = await session.execute(select(PostsOrm)
-                                              .where(PostsOrm.user.has(is_active=True))
-                                              .options(selectinload(PostsOrm.user)))
-            res_post_list = post_list.scalars().all()
-            return res_post_list
+class PostServiceORM(BaseServiceORM):
+    model = PostsOrm
+    not_found_detail = "Post not found"
+
+    @classmethod
+    def list_query(cls):
+        return (
+            select(PostsOrm)
+            .where(PostsOrm.user.has(is_active=True))
+            .options(selectinload(PostsOrm.user))
+        )
+
+    @classmethod
+    def detail_query(cls, object_id: int):
+        return (
+            select(PostsOrm)
+            .where(PostsOrm.user.has(is_active=True))
+            .options(joinedload(PostsOrm.user))
+            .where(PostsOrm.id == object_id)
+        )
+
+    @classmethod
+    async def show_all_posts(cls):
+        return await cls.show_all()
         
     @staticmethod
     async def show_user_posts(user_id: int):
@@ -23,20 +39,12 @@ class PostServiceORM:
             res_user_post_list = user_post_list.scalars().all()
             return res_user_post_list
         
-    @staticmethod
-    async def show_post(post_id: int):
-        async with async_session_factory() as session:
-            post = await session.execute(select(PostsOrm)
-                                         .where(PostsOrm.user.has(is_active=True))
-                                         .options(joinedload(PostsOrm.user))
-                                         .where(PostsOrm.id == post_id))
-            res_post = post.scalar_one_or_none()
-            if res_post is None:
-                raise HTTPException(status_code=404, detail="Post not found")
-            return res_post
+    @classmethod
+    async def show_post(cls, post_id: int):
+        return await cls.show_one(post_id)
         
     @staticmethod
-    async def is_made_by_user(user_id: int, post_id):
+    async def is_made_by_user(user_id: int, post_id: int):
         async with async_session_factory() as session:
             user_id_key = await session.execute(select(PostsOrm.user_id).where(PostsOrm.id == post_id))
             res_user_id_key = user_id_key.scalar()
@@ -51,14 +59,9 @@ class PostServiceORM:
                 role=user.role
             )
         
-    @staticmethod
-    async def new_post(user_id: int, new_post: PostDefaultInfoAddDTO):
-        async with async_session_factory() as session:
-            post = PostsOrm(**new_post.model_dump(), user_id=user_id)
-            session.add(post)
-            await session.commit()
-            await session.refresh(post)
-            return post
+    @classmethod
+    async def new_post(cls, user_id: int, new_post: PostDefaultInfoAddDTO):
+        return await cls.create(**new_post.model_dump(), user_id=user_id)
         
     @staticmethod
     async def edit_post(post_id: int, new_post: PostPageInfoDTO):
@@ -72,12 +75,6 @@ class PostServiceORM:
             await session.refresh(post)
             return post
         
-    @staticmethod
-    async def delete_post(post_id: int):
-        async with async_session_factory() as session:
-            post = await session.get(PostsOrm, post_id)
-            if not post:
-                raise HTTPException(status_code=404, detail="Post not found")
-            await session.delete(post)
-            await session.commit()
-            return {"detail": "Successfully deleted"}
+    @classmethod
+    async def delete_post(cls, post_id: int):
+        return await cls.hard_delete(post_id)

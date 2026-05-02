@@ -7,6 +7,9 @@ Feel free to comment and leave helpful advice on improvements or fixes.
 
 ## Installation
 
+For local infrastructure, environment notes, and mock data loading, see
+[`local_start_guide/local-start.md`](local_start_guide/local-start.md).
+
 ### 1. Clone the repository
 ```bash
 git clone https://github.com/SuperB1aze/cryptoweb-project.git
