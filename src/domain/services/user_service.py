@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy import select
+
 from src.database import async_session_factory
-from pydantic import EmailStr
 from src.domain.services.base_service import BaseServiceORM
 from src.infrastructure.db.models import UsersOrm, Role
 from src.app.schemas.user import UserCreateAddDTO, UserBioAddDTO
@@ -31,7 +31,7 @@ class UserServiceORM(BaseServiceORM):
         return await cls.show_one(user_id)
         
     @staticmethod
-    async def show_profile_by_email(email: EmailStr):
+    async def show_profile_by_email(email: str):
         async with async_session_factory() as session:
             user = await session.execute(select(UsersOrm).where(UsersOrm.email == email))
             res_user = user.scalars().first()

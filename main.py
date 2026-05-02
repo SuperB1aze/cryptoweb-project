@@ -21,7 +21,7 @@ def custom_openapi():
     
     openapi_schema = get_openapi(
         title=app.title,
-        version="0.1.1 alpha",
+        version="0.1.2 alpha",
         routes=app.routes,
     )
     app.openapi_schema = openapi_schema
