@@ -1,11 +1,13 @@
 from typing import Annotated, TypeAlias
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 
-from fastapi import APIRouter, Depends, HTTPException
 from src.app.schemas.post import PostDefaultInfoAddDTO, PostFullInfoDTO, PostPageInfoDTO
+from src.infrastructure.db.models import Role, UsersOrm
+
 from src.domain.services.user_service import UserServiceORM
 from src.domain.services.post_service import PostServiceORM
+from src.domain.services.media_service import MediaServiceORM
 from src.domain.services.auth_service import AuthServiceORM
-from src.infrastructure.db.models import Role, UsersOrm
 
 router_post = APIRouter(prefix="/posts", tags=["Posts"])
 CurrentUser: TypeAlias = Annotated[
@@ -30,15 +32,28 @@ async def user_post(post_id: int):
     return post
 
 @router_post.post("/me/upload", summary="make your new post", response_model=PostPageInfoDTO)
-async def my_new_post(post: PostDefaultInfoAddDTO, current_user: CurrentUser):
+async def my_new_post(
+    current_user: CurrentUser,
+    text_content: str = Form(...),
+    media_files: list[UploadFile] | None = File(default=None),
+):
+    post = PostDefaultInfoAddDTO(text_content=text_content)
     created_post = await PostServiceORM.new_post(current_user.id, post)
-    return created_post
+    await MediaServiceORM.attach_media(created_post.id, media_files)
+    return await PostServiceORM.show_post(created_post.id)
         
 @router_post.post("/{user_id}/upload", summary="make a new post as another user", response_model=PostPageInfoDTO)
-async def new_post(user_id: int, post: PostDefaultInfoAddDTO, current_user: CurrentUser):
+async def new_post(
+    user_id: int,
+    current_user: CurrentUser,
+    text_content: str = Form(...),
+    media_files: list[UploadFile] | None = File(default=None),
+):
     if current_user.role == Role.admin or current_user.id == user_id:
+        post = PostDefaultInfoAddDTO(text_content=text_content)
         created_post = await PostServiceORM.new_post(user_id, post)
-        return created_post
+        await MediaServiceORM.attach_media(created_post.id, media_files)
+        return await PostServiceORM.show_post(created_post.id)
     raise HTTPException(status_code=403, detail="Not enough permissions")
 
 @router_post.patch("/{post_id}/edit", summary="edit a specific post", response_model=PostPageInfoDTO)

@@ -15,7 +15,7 @@ class PostServiceORM(BaseServiceORM):
         return (
             select(PostsOrm)
             .where(PostsOrm.user.has(is_active=True))
-            .options(selectinload(PostsOrm.user))
+            .options(selectinload(PostsOrm.user), selectinload(PostsOrm.attached_medias))
         )
 
     @classmethod
@@ -23,7 +23,7 @@ class PostServiceORM(BaseServiceORM):
         return (
             select(PostsOrm)
             .where(PostsOrm.user.has(is_active=True))
-            .options(joinedload(PostsOrm.user))
+            .options(joinedload(PostsOrm.user), selectinload(PostsOrm.attached_medias))
             .where(PostsOrm.id == object_id)
         )
 
@@ -34,8 +34,11 @@ class PostServiceORM(BaseServiceORM):
     @staticmethod
     async def show_user_posts(user_id: int):
         async with async_session_factory() as session:
-            user_post_list = await session.execute(select(PostsOrm)
-                                                   .where(PostsOrm.user_id == user_id))
+            user_post_list = await session.execute(
+                select(PostsOrm)
+                .where(PostsOrm.user_id == user_id)
+                .options(selectinload(PostsOrm.attached_medias))
+            )
             res_user_post_list = user_post_list.scalars().all()
             return res_user_post_list
         

@@ -26,6 +26,16 @@ def get_bool_env(name: str, default: bool = False) -> bool:
     return value.lower() in ("1", "true", "yes", "on")
 
 
+def get_env_any(*names: str, default: str | None = None) -> str:
+    for name in names:
+        value = os.getenv(name)
+        if value is not None:
+            return value
+    if default is not None:
+        return default
+    raise RuntimeError(f"Environment variable one of {names} is required")
+
+
 class DBSettings(BaseSettings):
     DB_HOST: str = get_required_env("DB_HOST")
     DB_PORT: int = get_required_int_env("DB_PORT")
@@ -70,8 +80,17 @@ class AuthJWT(BaseModel):
     refresh_cookie_secure: bool = get_bool_env("REFRESH_COOKIE_SECURE")
 
 
+class MinIOSettings(BaseSettings):
+    endpoint_url: str = get_env_any("MINIO_ENDPOINT_URL", "S3_ENDPOINT", default="http://localhost:9000")
+    access_key: str = get_env_any("MINIO_ACCESS_KEY", "S3_ACCESS_KEY", default="minioadmin")
+    secret_key: str = get_env_any("MINIO_SECRET_KEY", "S3_SECRET_KEY", default="minioadmin")
+    bucket_name: str = get_env_any("MINIO_BUCKET_NAME", "S3_BUCKET", default="media")
+    public_base_url: str = get_env_any("MINIO_PUBLIC_BASE_URL", "S3_ENDPOINT", default="http://localhost:9000")
+
+
 class Settings(BaseSettings):
     db: DBSettings = Field(default_factory=DBSettings)
     auth_jwt: AuthJWT = Field(default_factory=AuthJWT)
+    minio: MinIOSettings = Field(default_factory=MinIOSettings)
 
 settings = Settings()

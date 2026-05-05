@@ -4,7 +4,9 @@ from src.infrastructure.db.models import Role
 from datetime import datetime
 
 class PostDefaultInfoAddDTO(BaseModel):
-    text_content: str = Field(min_length=1, max_length=1000, description="Your post can only be from 1 to 1000 characters.")
+    text_content: str = Field(min_length=1,
+                              max_length=1000,
+                              description="Your post can only be from 1 to 1000 characters.")
 
     model_config = {
         "extra": "forbid",
@@ -12,6 +14,7 @@ class PostDefaultInfoAddDTO(BaseModel):
     }
 
 class PostPageInfoDTO(PostDefaultInfoAddDTO):
+    media_urls: list[str] = Field(default_factory=list, description="Attached media URLs.")
     created_at: datetime
     updated_at: datetime | None = None
 

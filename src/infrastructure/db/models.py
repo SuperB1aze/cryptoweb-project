@@ -1,16 +1,10 @@
-from datetime import datetime
 import enum
 from typing import Annotated
-from src.infrastructure.db.base import Base
+from src.infrastructure.db.base import Base, int_primary_key, created_at, updated_at
+from src.infrastructure.db.media import PFPsOrm, AttachedMediasOrm
 
-from sqlalchemy import ForeignKey, String, text, TIMESTAMP
+from sqlalchemy import ForeignKey, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-int_primary_key = Annotated[int, mapped_column(primary_key=True, autoincrement=True)]
-created_at = Annotated[datetime, mapped_column(server_default=text("TIMEZONE('utc', now())"))]
-updated_at = Annotated[datetime, mapped_column(
-        TIMESTAMP(timezone=True),
-        nullable=True)]
 
 class Role(enum.Enum):
     user = "User"
@@ -33,8 +27,18 @@ class UsersOrm(Base):
     country: Mapped[str | None]
     description: Mapped[Annotated[str, mapped_column(String(500))] | None]
 
-    posts: Mapped[list["PostsOrm"]] = relationship(back_populates="user")
+    posts: Mapped[list["PostsOrm"]] = relationship(back_populates="user", passive_deletes=True)
+    pfp: Mapped["PFPsOrm | None"] = relationship(
+        back_populates="user",
+        passive_deletes=True,
+        cascade="all, delete-orphan",
+        single_parent=True,
+    )
     repr_col = ("id", "tag", "role", "created_at")
+
+    @property
+    def pfp_url(self) -> str | None:
+        return self.pfp.url if self.pfp else None
 
 class PostsOrm(Base):
     __tablename__ = "posts"
@@ -46,4 +50,14 @@ class PostsOrm(Base):
     text_content: Mapped[Annotated[str, mapped_column(String(1000), nullable=False)]]
 
     user: Mapped["UsersOrm"] = relationship(back_populates="posts")
+    attached_medias: Mapped[list["AttachedMediasOrm"] | None] = relationship(
+        back_populates="post",
+        passive_deletes=True,
+    )
     repr_col = ("id", "user_id", "text_content")
+
+    @property
+    def media_urls(self) -> list[str]:
+        if not self.attached_medias:
+            return []
+        return [media.url for media in self.attached_medias]

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr, SecretStr
+from pydantic import BaseModel, Field, EmailStr, SecretStr, HttpUrl
 from src.infrastructure.db.models import Role
 from src.app.schemas.auth import TokenInfo
 from datetime import datetime
@@ -12,6 +12,14 @@ class UserDefaultInfoAddDTO(BaseModel):
         "from_attributes": True
     }
 
+class UserPfpUpdateDTO(BaseModel):
+    pfp_url: HttpUrl | None = None
+
+    model_config = {
+        "extra": "forbid",
+        "from_attributes": True
+    }
+
 class UserAgeDTO(BaseModel):
     age: int = Field(ge=16, le=120, description="Your age can only be from 16 to 120 years old.")
          
@@ -19,7 +27,7 @@ class UserCreateAddDTO(UserAgeDTO, UserDefaultInfoAddDTO):
     email: EmailStr
     password: SecretStr
 
-class UserBioAddDTO(BaseModel):
+class UserBioAddDTO(UserPfpUpdateDTO):
     description: str | None = Field(max_length=500, description="Your description can only be up to 500 characters.")
     city: str | None
     country: str | None
