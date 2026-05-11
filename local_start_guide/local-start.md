@@ -14,6 +14,17 @@ The project still expects infrastructure files in the repository root:
 
 Do not commit `.env` or `certs/`. They are local machine files and are already ignored by git.
 
+Use Python 3.12 for this project.
+
+Quick setup options:
+
+- Windows (`winget`):
+  - `winget install -e --id Python.Python.3.12`
+- macOS (`Homebrew`):
+  - `brew install python@3.12`
+- Linux:
+  - use your distro package manager to install Python 3.12 (package is usually `python3.12`)
+
 ## Environment
 
 Create `.env` in the repository root. Keep the real values private and take them from your local setup or private notes.
@@ -38,9 +49,10 @@ Run these commands from the repository root:
 
 ```powershell
 docker compose up -d
-.\venv\Scripts\activate
+py -3.12 -m venv venv
+.\venv\Scripts\activate.ps1
 pip install -r requirements.txt
-sh ./local_start_guide/create-test-db.sh
+./local_start_guide/create-test-db.sh
 alembic upgrade head
 python local_start_guide\seed_mock_data.py
 python main.py

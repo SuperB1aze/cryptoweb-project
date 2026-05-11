@@ -15,8 +15,17 @@ class MediaServiceORM:
     MAX_POST_MEDIA_FILES = 10
 
     @staticmethod
-    async def upload_to_minio(owner_prefix: str, owner_id: int, file: UploadFile) -> str:
-        if not file.content_type or not file.content_type.startswith("image/"):
+    def get_storage_prefix() -> str:
+        return "test" if settings.db.TEST_MODE else "main"
+
+    @staticmethod
+    async def upload_to_minio(
+        owner_prefix: str,
+        owner_id: int,
+        file: UploadFile,
+        images_only: bool = True,
+    ) -> str:
+        if images_only and (not file.content_type or not file.content_type.startswith("image/")):
             raise HTTPException(status_code=400, detail="Only image files are allowed")
 
         file_bytes = await file.read()
@@ -26,7 +35,7 @@ class MediaServiceORM:
         ext = ""
         if file.filename and "." in file.filename:
             ext = "." + file.filename.rsplit(".", 1)[-1].lower()
-        object_name = f"{owner_prefix}/{owner_id}/{uuid4().hex}{ext}"
+        object_name = f"{MediaServiceORM.get_storage_prefix()}/{owner_prefix}/{owner_id}/{uuid4().hex}{ext}"
 
         s3 = S3Client(
             access_key=settings.minio.access_key,
@@ -34,7 +43,7 @@ class MediaServiceORM:
             endpoint_url=settings.minio.endpoint_url,
             bucket_name=settings.minio.bucket_name,
         )
-        await s3.upload_bytes(file_bytes, object_name, file.content_type)
+        await s3.upload_bytes(file_bytes, object_name, file.content_type or "application/octet-stream")
         return s3.build_object_url(object_name, settings.minio.public_base_url)
 
     @staticmethod
@@ -75,7 +84,12 @@ class MediaServiceORM:
                 raise HTTPException(status_code=404, detail="Post not found")
 
             for media_file in media_files:
-                media_url = await MediaServiceORM.upload_to_minio("posts", post_id, media_file)
+                media_url = await MediaServiceORM.upload_to_minio(
+                    "posts",
+                    post_id,
+                    media_file,
+                    images_only=False,
+                )
                 session.add(AttachedMediasOrm(url=media_url, post_id=post_id))
 
             await session.commit()
