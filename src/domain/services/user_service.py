@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 from src.database import async_session_factory
 from src.domain.services.base_service import BaseServiceORM
 from src.domain.services.media_service import MediaServiceORM
-from src.infrastructure.db.models import UsersOrm, Role
+from infrastructure.db.main_models import UsersOrm, Role
 from src.app.schemas.user import UserCreateAddDTO, UserBioAddDTO
 from src.auth_utils import hash_password
 

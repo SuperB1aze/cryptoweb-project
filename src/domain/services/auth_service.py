@@ -10,7 +10,7 @@ from src.auth_utils import encode_jwt, decode_jwt, check_password
 from src.app.schemas.auth import UserLogin
 from src.config import settings
 from src.domain.services.user_service import UserServiceORM
-from src.infrastructure.db.models import UsersOrm
+from infrastructure.db.main_models import UsersOrm
 
 class AuthServiceORM:
     refresh_cookie_name = "refresh_token"

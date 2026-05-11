@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from pydantic.json_schema import SkipJsonSchema
 
 from src.app.schemas.post import PostDefaultInfoAddDTO, PostFullInfoDTO, PostPageInfoDTO
-from src.infrastructure.db.models import Role, UsersOrm
+from infrastructure.db.main_models import Role, UsersOrm
 
 from src.domain.services.user_service import UserServiceORM
 from src.domain.services.post_service import PostServiceORM

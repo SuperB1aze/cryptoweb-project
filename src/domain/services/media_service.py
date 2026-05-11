@@ -7,8 +7,9 @@ from sqlalchemy import select, func
 
 from src.config import settings
 from src.database import async_session_factory
-from src.infrastructure.db.media import AttachedMediasOrm, PFPsOrm
-from src.infrastructure.db.models import PostsOrm, UsersOrm
+from infrastructure.db.media_models import AttachedMediasOrm, PFPsOrm
+from infrastructure.db.main_models import PostsOrm, UsersOrm
+from infrastructure.db.reaction_models import CommentsOrm
 from src.infrastructure.minioS3.minio import S3Client
 
 
@@ -123,6 +124,62 @@ class MediaServiceORM:
                 raise HTTPException(status_code=404, detail="Post not found")
 
             medias = await session.scalars(select(AttachedMediasOrm).where(AttachedMediasOrm.post_id == post_id))
+            media_list = list(medias.all())
+            for media in media_list:
+                await session.delete(media)
+            await session.commit()
+
+        s3 = S3Client(
+            access_key=settings.minio.access_key,
+            secret_key=settings.minio.secret_key,
+            endpoint_url=settings.minio.endpoint_url,
+            bucket_name=settings.minio.bucket_name,
+        )
+        for media in media_list:
+            object_name = MediaServiceORM.extract_obj_name(media.url)
+            if object_name is None:
+                continue
+            try:
+                await s3.delete_object(object_name)
+            except Exception:
+                continue
+
+    @staticmethod
+    async def attach_comment_media(comment_id: int, media_files: list[UploadFile] | None) -> None:
+        if not media_files:
+            return
+        if len(media_files) > MediaServiceORM.MAX_POST_MEDIA_FILES:
+            raise HTTPException(status_code=400, detail="You can attach up to 10 media files")
+
+        async with async_session_factory() as session:
+            comment = await session.get(CommentsOrm, comment_id)
+            if not comment:
+                raise HTTPException(status_code=404, detail="Comment not found")
+            existing_media_count = await session.scalar(
+                select(func.count(AttachedMediasOrm.id)).where(AttachedMediasOrm.comment_id == comment_id)
+            )
+            if (existing_media_count or 0) + len(media_files) > MediaServiceORM.MAX_POST_MEDIA_FILES:
+                raise HTTPException(status_code=400, detail="A comment can have up to 10 media files in total")
+
+            for media_file in media_files:
+                media_url = await MediaServiceORM.upload_to_minio(
+                    "comments",
+                    comment_id,
+                    media_file,
+                    images_only=False,
+                )
+                session.add(AttachedMediasOrm(url=media_url, comment_id=comment_id))
+
+            await session.commit()
+
+    @staticmethod
+    async def clear_comment_media(comment_id: int) -> None:
+        async with async_session_factory() as session:
+            comment = await session.get(CommentsOrm, comment_id)
+            if not comment:
+                raise HTTPException(status_code=404, detail="Comment not found")
+
+            medias = await session.scalars(select(AttachedMediasOrm).where(AttachedMediasOrm.comment_id == comment_id))
             media_list = list(medias.all())
             for media in media_list:
                 await session.delete(media)

@@ -1,7 +1,10 @@
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+SRC_ROOT = os.path.join(PROJECT_ROOT, "src")
+sys.path.append(PROJECT_ROOT)
+sys.path.append(SRC_ROOT)
 
 from logging.config import fileConfig
 
@@ -11,8 +14,8 @@ from sqlalchemy import pool
 from alembic import context
 
 from src.config import settings
-from src.infrastructure.db.models import *
-from src.infrastructure.db.base import Base
+from infrastructure.db.main_models import *
+from infrastructure.db.base_model import Base
 
 config = context.config
 

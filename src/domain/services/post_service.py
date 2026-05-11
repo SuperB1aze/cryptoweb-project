@@ -3,7 +3,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload, joinedload
 from src.database import async_session_factory
 from src.domain.services.base_service import BaseServiceORM
-from src.infrastructure.db.models import PostsOrm, UsersOrm
+from infrastructure.db.main_models import PostsOrm, UsersOrm
 from src.app.schemas.post import PostDefaultInfoAddDTO, PostOwnershipDTO
 
 class PostServiceORM(BaseServiceORM):
@@ -15,7 +15,11 @@ class PostServiceORM(BaseServiceORM):
         return (
             select(PostsOrm)
             .where(PostsOrm.user.has(is_active=True))
-            .options(selectinload(PostsOrm.user), selectinload(PostsOrm.attached_medias))
+            .options(
+                selectinload(PostsOrm.user),
+                selectinload(PostsOrm.attached_medias),
+                selectinload(PostsOrm.likes),
+            )
         )
 
     @classmethod
@@ -23,7 +27,11 @@ class PostServiceORM(BaseServiceORM):
         return (
             select(PostsOrm)
             .where(PostsOrm.user.has(is_active=True))
-            .options(joinedload(PostsOrm.user), selectinload(PostsOrm.attached_medias))
+            .options(
+                joinedload(PostsOrm.user),
+                selectinload(PostsOrm.attached_medias),
+                selectinload(PostsOrm.likes),
+            )
             .where(PostsOrm.id == object_id)
         )
 
@@ -37,7 +45,7 @@ class PostServiceORM(BaseServiceORM):
             user_post_list = await session.execute(
                 select(PostsOrm)
                 .where(PostsOrm.user_id == user_id)
-                .options(selectinload(PostsOrm.attached_medias))
+                .options(selectinload(PostsOrm.attached_medias), selectinload(PostsOrm.likes))
             )
             res_user_post_list = user_post_list.scalars().all()
             return res_user_post_list

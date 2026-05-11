@@ -1,7 +1,8 @@
 import enum
 from typing import Annotated
-from src.infrastructure.db.base import Base, int_primary_key, created_at, updated_at
-from src.infrastructure.db.media import PFPsOrm, AttachedMediasOrm
+from infrastructure.db.base_model import Base, int_primary_key, created_at, updated_at
+from infrastructure.db.reaction_models import LikesOrm, CommentsOrm
+from infrastructure.db.media_models import PFPsOrm, AttachedMediasOrm
 
 from sqlalchemy import ForeignKey, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -28,13 +29,15 @@ class UsersOrm(Base):
     description: Mapped[Annotated[str, mapped_column(String(500))] | None]
 
     posts: Mapped[list["PostsOrm"]] = relationship(back_populates="user", passive_deletes=True)
+    likes: Mapped[list["LikesOrm"]] = relationship(back_populates="user", passive_deletes=True)
+    comments: Mapped[list["CommentsOrm"]] = relationship(back_populates="user", passive_deletes=True)
     pfp: Mapped["PFPsOrm | None"] = relationship(
         back_populates="user",
         passive_deletes=True,
         cascade="all, delete-orphan",
         single_parent=True,
     )
-    repr_col = ("id", "tag", "role", "created_at")
+    repr_cols = ("id", "tag", "role", "created_at")
 
     @property
     def pfp_url(self) -> str | None:
@@ -50,14 +53,24 @@ class PostsOrm(Base):
     text_content: Mapped[Annotated[str, mapped_column(String(1000), nullable=False)]]
 
     user: Mapped["UsersOrm"] = relationship(back_populates="posts")
-    attached_medias: Mapped[list["AttachedMediasOrm"] | None] = relationship(
+    attached_medias: Mapped[list["AttachedMediasOrm"]] = relationship(
         back_populates="post",
         passive_deletes=True,
     )
-    repr_col = ("id", "user_id", "text_content")
+    likes: Mapped[list["LikesOrm"]] = relationship(
+        back_populates="post",
+        passive_deletes=True,
+    )
+    comments: Mapped[list["CommentsOrm"]] = relationship(back_populates="post", passive_deletes=True)
+    repr_cols = ("id", "user_id", "text_content")
 
     @property
     def media_urls(self) -> list[str]:
         if not self.attached_medias:
             return []
         return [media.url for media in self.attached_medias]
+    
+    @property
+    def likes_count(self) -> int:
+        return len(self.likes) if self.likes else 0
+    

@@ -5,8 +5,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from src.domain.services.auth_service import AuthServiceORM
 from src.app.schemas.auth import UserLogin, TokenInfo
-from src.infrastructure.db.models import Role
-from src.infrastructure.db.models import UsersOrm
+from infrastructure.db.main_models import Role
+from infrastructure.db.main_models import UsersOrm
 
 router_auth = APIRouter(tags=["Auth"])
 optional_bearer = HTTPBearer(auto_error=False)

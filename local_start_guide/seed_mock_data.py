@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
 
 from src.database import async_session_factory
-from src.infrastructure.db.models import PostsOrm, Role, UsersOrm
+from infrastructure.db.main_models import PostsOrm, Role, UsersOrm
 
 
 MOCK_PASSWORD = "password123"
