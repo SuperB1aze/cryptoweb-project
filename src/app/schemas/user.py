@@ -3,6 +3,9 @@ from src.infrastructure.db.models import Role
 from src.app.schemas.auth import TokenInfo
 from datetime import datetime
 
+class UserIDDTO(BaseModel):
+    id: int
+
 class UserDefaultInfoAddDTO(BaseModel):
     tag: str = Field(min_length=1, max_length=20, pattern=r'^[A-Za-z0-9_.]+$', description="Your tag can only be from 1 to 20 characters and contain English letters, numbers, underscores and dots.")
     name: str = Field(min_length=1, max_length=20, description="Your name can only be from 1 to 20 characters.")
@@ -32,7 +35,7 @@ class UserBioAddDTO(UserPfpUpdateDTO):
     city: str | None
     country: str | None
 
-class UserFullInfoDTO(UserBioAddDTO, UserAgeDTO, UserDefaultInfoAddDTO):
+class UserFullInfoDTO(UserBioAddDTO, UserAgeDTO, UserDefaultInfoAddDTO, UserIDDTO):
     role: Role
     created_at: datetime
 

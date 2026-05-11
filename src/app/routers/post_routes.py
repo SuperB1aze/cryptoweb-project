@@ -1,5 +1,6 @@
 from typing import Annotated, TypeAlias
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from pydantic.json_schema import SkipJsonSchema
 
 from src.app.schemas.post import PostDefaultInfoAddDTO, PostFullInfoDTO, PostPageInfoDTO
 from src.infrastructure.db.models import Role, UsersOrm
@@ -35,11 +36,11 @@ async def user_post(post_id: int):
 async def my_new_post(
     current_user: CurrentUser,
     text_content: str = Form(...),
-    media_files: list[UploadFile] | None = File(default=None),
+    media_files: list[UploadFile | SkipJsonSchema[str]] | None = File(default=None),
 ):
     post = PostDefaultInfoAddDTO(text_content=text_content)
     created_post = await PostServiceORM.new_post(current_user.id, post)
-    await MediaServiceORM.attach_media(created_post.id, media_files)
+    await MediaServiceORM.attach_media(created_post.id, MediaServiceORM.normalize_media_files(media_files))
     return await PostServiceORM.show_post(created_post.id)
         
 @router_post.post("/{user_id}/upload", summary="make a new post as another user", response_model=PostPageInfoDTO)
@@ -47,21 +48,44 @@ async def new_post(
     user_id: int,
     current_user: CurrentUser,
     text_content: str = Form(...),
-    media_files: list[UploadFile] | None = File(default=None),
+    media_files: list[UploadFile | SkipJsonSchema[str]] | None = File(default=None),
 ):
     if current_user.role == Role.admin or current_user.id == user_id:
         post = PostDefaultInfoAddDTO(text_content=text_content)
         created_post = await PostServiceORM.new_post(user_id, post)
-        await MediaServiceORM.attach_media(created_post.id, media_files)
+        await MediaServiceORM.attach_media(created_post.id, MediaServiceORM.normalize_media_files(media_files))
         return await PostServiceORM.show_post(created_post.id)
     raise HTTPException(status_code=403, detail="Not enough permissions")
 
 @router_post.patch("/{post_id}/edit", summary="edit a specific post", response_model=PostPageInfoDTO)
-async def edit_post(post_id: int, edited_content: PostDefaultInfoAddDTO, current_user: CurrentUser):
+async def edit_post(
+    post_id: int,
+    current_user: CurrentUser,
+    text_content: str | None = Form(default=None),
+    media_files: list[UploadFile | SkipJsonSchema[str]] | None = File(default=None),
+    clear_media: bool = Form(default=False),
+):
     owner_info = await PostServiceORM.is_made_by_user(user_id=current_user.id, post_id=post_id)
     if owner_info.is_owner or current_user.role==Role.admin or (current_user.role == Role.mod and owner_info.role not in (Role.admin, Role.mod)):
-        edited_post = await PostServiceORM.edit_post(post_id, edited_content)
-        return edited_post
+        normalized_text_content = text_content.strip() if text_content is not None else None
+        if normalized_text_content == "":
+            normalized_text_content = None
+        normalized_media_files = MediaServiceORM.normalize_media_files(media_files)
+
+        if normalized_text_content is None and not normalized_media_files and not clear_media:
+            raise HTTPException(status_code=400, detail="Nothing to update")
+
+        if normalized_text_content is not None:
+            edited_content = PostDefaultInfoAddDTO(text_content=normalized_text_content)
+            await PostServiceORM.edit_post(post_id, edited_content)
+
+        if clear_media:
+            await MediaServiceORM.clear_post_media(post_id)
+
+        if normalized_media_files:
+            await MediaServiceORM.attach_media(post_id, normalized_media_files)
+
+        return await PostServiceORM.show_post(post_id)
     raise HTTPException(status_code=403, detail="Not enough permissions")
 
 @router_post.delete("/{post_id}/delete", summary="delete a specific post")

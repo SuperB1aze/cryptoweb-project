@@ -3,6 +3,9 @@ from src.app.schemas.user import UserDefaultInfoAddDTO
 from src.infrastructure.db.models import Role
 from datetime import datetime
 
+class PostIDDTO(BaseModel):
+    id: int
+
 class PostDefaultInfoAddDTO(BaseModel):
     text_content: str = Field(min_length=1,
                               max_length=1000,
@@ -13,7 +16,7 @@ class PostDefaultInfoAddDTO(BaseModel):
         "from_attributes": True
     }
 
-class PostPageInfoDTO(PostDefaultInfoAddDTO):
+class PostPageInfoDTO(PostIDDTO, PostDefaultInfoAddDTO):
     media_urls: list[str] = Field(default_factory=list, description="Attached media URLs.")
     created_at: datetime
     updated_at: datetime | None = None

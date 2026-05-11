@@ -4,7 +4,7 @@ from sqlalchemy.orm import selectinload, joinedload
 from src.database import async_session_factory
 from src.domain.services.base_service import BaseServiceORM
 from src.infrastructure.db.models import PostsOrm, UsersOrm
-from src.app.schemas.post import PostDefaultInfoAddDTO, PostPageInfoDTO, PostOwnershipDTO
+from src.app.schemas.post import PostDefaultInfoAddDTO, PostOwnershipDTO
 
 class PostServiceORM(BaseServiceORM):
     model = PostsOrm
@@ -67,7 +67,7 @@ class PostServiceORM(BaseServiceORM):
         return await cls.create(**new_post.model_dump(), user_id=user_id)
         
     @staticmethod
-    async def edit_post(post_id: int, new_post: PostPageInfoDTO):
+    async def edit_post(post_id: int, new_post: PostDefaultInfoAddDTO):
         async with async_session_factory() as session:
             post = await session.get(PostsOrm, post_id)
             if not post:

@@ -2,7 +2,8 @@ from uuid import uuid4
 from urllib.parse import urlparse
 
 from fastapi import HTTPException, UploadFile
-from sqlalchemy import select
+from pydantic.json_schema import SkipJsonSchema
+from sqlalchemy import select, func
 
 from src.config import settings
 from src.database import async_session_factory
@@ -17,6 +18,21 @@ class MediaServiceORM:
     @staticmethod
     def get_storage_prefix() -> str:
         return "test" if settings.db.TEST_MODE else "main"
+
+    @staticmethod
+    def normalize_media_files(
+        media_files: list[UploadFile | SkipJsonSchema[str]] | None,
+    ) -> list[UploadFile] | None:
+        if not media_files:
+            return None
+        normalized: list[UploadFile] = []
+        for media_file in media_files:
+            if isinstance(media_file, str):
+                if media_file.strip().lower() in {"", "string"}:
+                    continue
+                raise HTTPException(status_code=422, detail="Invalid media_files value")
+            normalized.append(media_file)
+        return normalized or None
 
     @staticmethod
     async def upload_to_minio(
@@ -82,6 +98,11 @@ class MediaServiceORM:
             post = await session.get(PostsOrm, post_id)
             if not post:
                 raise HTTPException(status_code=404, detail="Post not found")
+            existing_media_count = await session.scalar(
+                select(func.count(AttachedMediasOrm.id)).where(AttachedMediasOrm.post_id == post_id)
+            )
+            if (existing_media_count or 0) + len(media_files) > MediaServiceORM.MAX_POST_MEDIA_FILES:
+                raise HTTPException(status_code=400, detail="A post can have up to 10 media files in total")
 
             for media_file in media_files:
                 media_url = await MediaServiceORM.upload_to_minio(
@@ -93,6 +114,34 @@ class MediaServiceORM:
                 session.add(AttachedMediasOrm(url=media_url, post_id=post_id))
 
             await session.commit()
+
+    @staticmethod
+    async def clear_post_media(post_id: int) -> None:
+        async with async_session_factory() as session:
+            post = await session.get(PostsOrm, post_id)
+            if not post:
+                raise HTTPException(status_code=404, detail="Post not found")
+
+            medias = await session.scalars(select(AttachedMediasOrm).where(AttachedMediasOrm.post_id == post_id))
+            media_list = list(medias.all())
+            for media in media_list:
+                await session.delete(media)
+            await session.commit()
+
+        s3 = S3Client(
+            access_key=settings.minio.access_key,
+            secret_key=settings.minio.secret_key,
+            endpoint_url=settings.minio.endpoint_url,
+            bucket_name=settings.minio.bucket_name,
+        )
+        for media in media_list:
+            object_name = MediaServiceORM.extract_obj_name(media.url)
+            if object_name is None:
+                continue
+            try:
+                await s3.delete_object(object_name)
+            except Exception:
+                continue
 
     @staticmethod
     async def delete_user_pfp(user_id: int) -> None:
