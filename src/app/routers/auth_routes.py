@@ -52,3 +52,8 @@ async def user_creds(user: RequiredUser):
     return {
         "email": user.email
     }
+
+@router_auth.post("/logout", summary="logout user")
+async def logout_user(response: Response):
+    response.delete_cookie(key=AuthServiceORM.refresh_cookie_name)
+    return {"detail": "Successfully logged out"}
