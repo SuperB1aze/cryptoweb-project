@@ -6,9 +6,10 @@ import bcrypt
 from sqlalchemy import select
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-sys.path.append(str(BASE_DIR))
+sys.path.insert(0, str(BASE_DIR))
+sys.path.insert(0, str(BASE_DIR / "src"))
 
-from src.database import async_session_factory
+from database import async_session_factory
 from infrastructure.db.main_models import PostsOrm, Role, UsersOrm
 
 
@@ -101,7 +102,6 @@ async def seed() -> None:
 
         await session.commit()
 
-    print("Mock data seeded.")
     print(f"Demo password for all seeded users: {MOCK_PASSWORD}")
 
 
