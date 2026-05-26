@@ -50,7 +50,8 @@ async def refresh_access_token(refresh_token: RefreshCookie = None):
 @router_auth.get("/user-credentials", summary="user credentials")
 async def user_creds(user: RequiredUser):
     return {
-        "email": user.email
+        "id": user.id,
+        "email": user.email,
     }
 
 @router_auth.post("/logout", summary="logout user")
