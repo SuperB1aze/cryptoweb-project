@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from src.database import async_session_factory
-from infrastructure.db.main_models import PostsOrm, Role
+from infrastructure.db.enums import Role, SortOrder
+from infrastructure.db.main_models import PostsOrm
 from infrastructure.db.reaction_models import CommentsOrm, LikesOrm
 
 
@@ -133,26 +134,31 @@ class ReactionServiceORM:
             if not comment:
                 raise HTTPException(status_code=404, detail="Comment not found")
             return comment
-        
-    @staticmethod
-    async def get_comment_likes_count(comment_id: int):
-        async with async_session_factory() as session:
-            likes_count_query = await session.execute(
-                select(func.count()).select_from(LikesOrm).where(LikesOrm.comment_id == comment_id)
-            )
-            likes_count = likes_count_query.scalar()
-            return likes_count
 
     @staticmethod
-    async def list_post_comments(post_id: int, limit: int = 20, offset: int = 0):
+    async def list_post_comments(post_id: int, limit: int = 20, offset: int = 0, sort: SortOrder = SortOrder.newest):
         async with async_session_factory() as session:
             post_exists = await session.get(PostsOrm, post_id)
             if not post_exists:
                 raise HTTPException(status_code=404, detail="Post not found")
+
+            if sort == SortOrder.popular:
+                order_clause = (
+                    select(func.count(LikesOrm.id))
+                    .where(LikesOrm.comment_id == CommentsOrm.id)
+                    .correlate(CommentsOrm)
+                    .scalar_subquery()
+                    .desc()
+                )
+            elif sort == SortOrder.oldest:
+                order_clause = CommentsOrm.created_at.asc()
+            else:
+                order_clause = CommentsOrm.created_at.desc()
+
             result = await session.execute(
                 select(CommentsOrm)
                 .where(CommentsOrm.post_id == post_id)
-                .order_by(CommentsOrm.created_at.desc())
+                .order_by(order_clause)
                 .options(
                     joinedload(CommentsOrm.user),
                     selectinload(CommentsOrm.attached_medias),

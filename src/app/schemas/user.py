@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, EmailStr, SecretStr, HttpUrl
-from infrastructure.db.main_models import Role
+from infrastructure.db.enums import Role
 from src.app.schemas.auth import TokenInfo
 from datetime import datetime
 

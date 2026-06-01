@@ -3,7 +3,9 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload, joinedload
 from src.database import async_session_factory
 from src.domain.services.base_service import BaseServiceORM
+from infrastructure.db.enums import SortOrder
 from infrastructure.db.main_models import PostsOrm, UsersOrm
+from infrastructure.db.reaction_models import LikesOrm
 from src.app.schemas.post import PostDefaultInfoAddDTO, PostOwnershipDTO
 
 class PostServiceORM(BaseServiceORM):
@@ -36,32 +38,46 @@ class PostServiceORM(BaseServiceORM):
         )
 
     @classmethod
-    async def show_all_posts(cls, limit: int = 20, offset: int = 0):
-        return await cls.show_all(limit=limit, offset=offset)
+    def _order_clause(cls, sort: SortOrder):
+        if sort == SortOrder.popular:
+            return (
+                select(func.count(LikesOrm.id))
+                .where(LikesOrm.post_id == PostsOrm.id)
+                .correlate(PostsOrm)
+                .scalar_subquery()
+                .desc()
+            )
+        if sort == SortOrder.oldest:
+            return PostsOrm.created_at.asc()
+        return PostsOrm.created_at.desc()
 
-    @staticmethod
-    async def show_user_posts(user_id: int):
+    @classmethod
+    async def show_all_posts(cls, limit: int = 20, offset: int = 0, sort: SortOrder = SortOrder.newest):
         async with async_session_factory() as session:
-            user_post_list = await session.execute(
+            result = await session.execute(
+                cls.list_query()
+                .order_by(cls._order_clause(sort))
+                .limit(limit)
+                .offset(offset)
+            )
+            return result.scalars().all()
+
+    @classmethod
+    async def show_user_posts(cls, user_id: int, limit: int = 20, offset: int = 0, sort: SortOrder = SortOrder.newest):
+        async with async_session_factory() as session:
+            result = await session.execute(
                 select(PostsOrm)
                 .where(PostsOrm.user_id == user_id)
                 .options(selectinload(PostsOrm.attached_medias), selectinload(PostsOrm.likes))
+                .order_by(cls._order_clause(sort))
+                .limit(limit)
+                .offset(offset)
             )
-            res_user_post_list = user_post_list.scalars().all()
-            return res_user_post_list
+            return result.scalars().all()
         
     @classmethod
     async def show_post(cls, post_id: int):
         return await cls.show_one(post_id)
-    
-    @classmethod
-    async def show_post_likes_count(cls, post_id: int):
-        async with async_session_factory() as session:
-            likes_count_query = await session.execute(
-                select(func.count()).select_from(PostsOrm.likes).where(PostsOrm.id == post_id)
-            )
-            likes_count = likes_count_query.scalar()
-            return likes_count
         
     @staticmethod
     async def is_made_by_user(user_id: int, post_id: int):

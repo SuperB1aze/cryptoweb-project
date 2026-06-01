@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from src.app.schemas.user import UserDefaultInfoAddDTO
-from infrastructure.db.main_models import Role
+from infrastructure.db.enums import Role
 from datetime import datetime
 
 class PostIDDTO(BaseModel):

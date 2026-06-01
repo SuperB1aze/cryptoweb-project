@@ -3,8 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from pydantic.json_schema import SkipJsonSchema
 
 from src.app.schemas.post import PostDefaultInfoAddDTO, PostFullInfoDTO, PostPageInfoDTO
-from src.app.dependencies import PaginationParams
-from infrastructure.db.main_models import Role, UsersOrm
+from src.app.dependencies import PaginationParams, SortingParams
+from infrastructure.db.enums import Role
+from infrastructure.db.main_models import UsersOrm
 
 from src.domain.services.user_service import UserServiceORM
 from src.domain.services.post_service import PostServiceORM
@@ -18,15 +19,20 @@ CurrentUser: TypeAlias = Annotated[
 ]
 
 @router_post.get("/", summary="get the list of all posts", response_model=list[PostFullInfoDTO])
-async def postslist(pagination: Annotated[PaginationParams, Depends()]):
-    post_list = await PostServiceORM.show_all_posts(limit=pagination.limit, offset=pagination.offset)
-    return post_list
+async def postslist(
+    pagination: Annotated[PaginationParams, Depends()],
+    sorting: Annotated[SortingParams, Depends()],
+):
+    return await PostServiceORM.show_all_posts(limit=pagination.limit, offset=pagination.offset, sort=sorting.sort_by)
 
 @router_post.get("/{user_id}", summary="get the list of all posts made by user", response_model=list[PostPageInfoDTO])
-async def user_postlist(user_id: int):
+async def user_postlist(
+    user_id: int,
+    pagination: Annotated[PaginationParams, Depends()],
+    sorting: Annotated[SortingParams, Depends()],
+):
     await UserServiceORM.show_profile(user_id)
-    user_post_list = await PostServiceORM.show_user_posts(user_id)
-    return user_post_list
+    return await PostServiceORM.show_user_posts(user_id, limit=pagination.limit, offset=pagination.offset, sort=sorting.sort_by)
 
 @router_post.get("/id/{post_id}", summary="get a specific post made by user", response_model=PostFullInfoDTO)
 async def user_post(post_id: int):

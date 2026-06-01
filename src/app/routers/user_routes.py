@@ -6,7 +6,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.dependencies import PaginationParams
 from src.app.schemas.user import UserCreateAddDTO, UserBioAddDTO, UserFullInfoDTO, UserFullInfoWithTokenDTO
 from src.app.schemas.auth import TokenInfo
-from infrastructure.db.main_models import Role, UsersOrm
+from infrastructure.db.enums import Role
+from infrastructure.db.main_models import UsersOrm
 
 from src.domain.services.user_service import UserServiceORM
 from src.domain.services.media_service import MediaServiceORM

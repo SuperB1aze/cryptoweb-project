@@ -1,16 +1,11 @@
-import enum
 from typing import Annotated
 from infrastructure.db.base_model import Base, int_primary_key, created_at, updated_at
 from infrastructure.db.reaction_models import LikesOrm, CommentsOrm
 from infrastructure.db.media_models import PFPsOrm, AttachedMediasOrm
+from infrastructure.db.enums import Role
 
 from sqlalchemy import ForeignKey, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-class Role(enum.Enum):
-    user = "User"
-    mod = "Mod"
-    admin = "Admin"
 
 class UsersOrm(Base):
     __tablename__ = "users"

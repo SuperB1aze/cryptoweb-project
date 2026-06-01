@@ -3,7 +3,7 @@ from typing import Annotated, TypeAlias
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic.json_schema import SkipJsonSchema
 
-from app.dependencies import PaginationParams
+from src.app.dependencies import PaginationParams, SortingParams
 from src.app.schemas.post import CommentDTO, CommentDefaultInfoAddDTO
 from src.domain.services.auth_service import AuthServiceORM
 from src.domain.services.media_service import MediaServiceORM
@@ -18,8 +18,12 @@ CurrentUser: TypeAlias = Annotated[
 
 
 @router_reaction.get("/{post_id}/comments", summary="get post comments", response_model=list[CommentDTO])
-async def list_post_comments(post_id: int, pagination: Annotated[PaginationParams, Depends()]):
-    return await ReactionServiceORM.list_post_comments(post_id=post_id, limit=pagination.limit, offset=pagination.offset)
+async def list_post_comments(
+    post_id: int,
+    pagination: Annotated[PaginationParams, Depends()],
+    sorting: Annotated[SortingParams, Depends()],
+):
+    return await ReactionServiceORM.list_post_comments(post_id=post_id, limit=pagination.limit, offset=pagination.offset, sort=sorting.sort_by)
 
 
 @router_reaction.post("/{post_id}/comments", summary="create comment", response_model=CommentDTO)

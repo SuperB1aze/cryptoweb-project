@@ -1,5 +1,7 @@
 from fastapi import Query
 
+from infrastructure.db.enums import SortOrder
+
 
 class PaginationParams:
     def __init__(
@@ -9,3 +11,10 @@ class PaginationParams:
     ):
         self.limit = limit
         self.offset = offset
+
+class SortingParams:
+    def __init__(
+        self,
+        sort_by: SortOrder = Query(default=SortOrder.newest, description="Sorting order"),
+    ):
+        self.sort_by = sort_by
