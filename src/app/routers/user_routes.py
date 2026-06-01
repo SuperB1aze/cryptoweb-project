@@ -3,6 +3,7 @@ from typing import Annotated, TypeAlias
 from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, File, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+from app.dependencies import PaginationParams
 from src.app.schemas.user import UserCreateAddDTO, UserBioAddDTO, UserFullInfoDTO, UserFullInfoWithTokenDTO
 from src.app.schemas.auth import TokenInfo
 from infrastructure.db.main_models import Role, UsersOrm
@@ -28,8 +29,8 @@ def user_info_dto(user: UsersOrm) -> UserFullInfoDTO:
     return UserFullInfoDTO.model_validate(user, from_attributes=True)
 
 @router_user.get("/", summary="get the list of all users", response_model=list[UserFullInfoDTO])
-async def userslist():
-    user_list = await UserServiceORM.show_all_users()
+async def userslist(pagination: Annotated[PaginationParams, Depends()]):
+    user_list = await UserServiceORM.show_all_users(limit=pagination.limit, offset=pagination.offset)
     return user_list
 
 @router_user.get("/{user_id}", summary="check user's profile", response_model=UserFullInfoDTO)

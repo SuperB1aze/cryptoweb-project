@@ -46,9 +46,9 @@ class BaseServiceORM:
         return obj
 
     @classmethod
-    async def show_all(cls):
+    async def show_all(cls, limit: int = 20, offset: int = 0):
         async with async_session_factory() as session:
-            result = await session.execute(cls.list_query())
+            result = await session.execute(cls.list_query().offset(offset).limit(limit))
             return result.scalars().all()
 
     @classmethod

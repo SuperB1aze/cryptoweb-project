@@ -36,9 +36,9 @@ class PostServiceORM(BaseServiceORM):
         )
 
     @classmethod
-    async def show_all_posts(cls):
-        return await cls.show_all()
-        
+    async def show_all_posts(cls, limit: int = 20, offset: int = 0):
+        return await cls.show_all(limit=limit, offset=offset)
+
     @staticmethod
     async def show_user_posts(user_id: int):
         async with async_session_factory() as session:
@@ -53,6 +53,15 @@ class PostServiceORM(BaseServiceORM):
     @classmethod
     async def show_post(cls, post_id: int):
         return await cls.show_one(post_id)
+    
+    @classmethod
+    async def show_post_likes_count(cls, post_id: int):
+        async with async_session_factory() as session:
+            likes_count_query = await session.execute(
+                select(func.count()).select_from(PostsOrm.likes).where(PostsOrm.id == post_id)
+            )
+            likes_count = likes_count_query.scalar()
+            return likes_count
         
     @staticmethod
     async def is_made_by_user(user_id: int, post_id: int):

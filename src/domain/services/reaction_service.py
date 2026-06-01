@@ -26,7 +26,7 @@ class ReactionServiceORM:
         )
 
     @staticmethod
-    async def like_post(post_id: int, user_id: int) -> dict[str, str]:
+    async def like_post(post_id: int, user_id: int):
         async with async_session_factory() as session:
             post = await session.get(PostsOrm, post_id)
             if not post:
@@ -50,7 +50,7 @@ class ReactionServiceORM:
             return {"detail": "Post liked"}
 
     @staticmethod
-    async def unlike_post(post_id: int, user_id: int) -> dict[str, str]:
+    async def unlike_post(post_id: int, user_id: int):
         async with async_session_factory() as session:
             like = await session.scalar(
                 select(LikesOrm).where(
@@ -66,7 +66,7 @@ class ReactionServiceORM:
             return {"detail": "Post unliked"}
 
     @staticmethod
-    async def like_comment(comment_id: int, user_id: int) -> dict[str, str]:
+    async def like_comment(comment_id: int, user_id: int):
         async with async_session_factory() as session:
             comment = await session.get(CommentsOrm, comment_id)
             if not comment:
@@ -90,7 +90,7 @@ class ReactionServiceORM:
             return {"detail": "Comment liked"}
 
     @staticmethod
-    async def unlike_comment(comment_id: int, user_id: int) -> dict[str, str]:
+    async def unlike_comment(comment_id: int, user_id: int):
         async with async_session_factory() as session:
             like = await session.scalar(
                 select(LikesOrm).where(
@@ -106,7 +106,7 @@ class ReactionServiceORM:
             return {"detail": "Comment unliked"}
 
     @staticmethod
-    async def create_comment(post_id: int, user_id: int, text_content: str) -> CommentsOrm:
+    async def create_comment(post_id: int, user_id: int, text_content: str):
         async with async_session_factory() as session:
             post = await session.get(PostsOrm, post_id)
             if not post:
@@ -119,7 +119,7 @@ class ReactionServiceORM:
             return comment
 
     @staticmethod
-    async def get_comment(comment_id: int) -> CommentsOrm:
+    async def get_comment(comment_id: int):
         async with async_session_factory() as session:
             comment = await session.scalar(
                 select(CommentsOrm)
@@ -133,9 +133,18 @@ class ReactionServiceORM:
             if not comment:
                 raise HTTPException(status_code=404, detail="Comment not found")
             return comment
+        
+    @staticmethod
+    async def get_comment_likes_count(comment_id: int):
+        async with async_session_factory() as session:
+            likes_count_query = await session.execute(
+                select(func.count()).select_from(LikesOrm).where(LikesOrm.comment_id == comment_id)
+            )
+            likes_count = likes_count_query.scalar()
+            return likes_count
 
     @staticmethod
-    async def list_post_comments(post_id: int) -> list[CommentsOrm]:
+    async def list_post_comments(post_id: int, limit: int = 20, offset: int = 0):
         async with async_session_factory() as session:
             post_exists = await session.get(PostsOrm, post_id)
             if not post_exists:
@@ -149,11 +158,13 @@ class ReactionServiceORM:
                     selectinload(CommentsOrm.attached_medias),
                     selectinload(CommentsOrm.likes),
                 )
+                .offset(offset)
+                .limit(limit)
             )
             return result.scalars().all()
 
     @staticmethod
-    async def edit_comment_text(comment_id: int, text_content: str) -> None:
+    async def edit_comment_text(comment_id: int, text_content: str):
         async with async_session_factory() as session:
             comment = await session.get(CommentsOrm, comment_id)
             if not comment:
@@ -180,7 +191,7 @@ class ReactionServiceORM:
             }
 
     @staticmethod
-    async def delete_comment(comment_id: int) -> dict[str, str]:
+    async def delete_comment(comment_id: int):
         async with async_session_factory() as session:
             comment = await session.get(CommentsOrm, comment_id)
             if not comment:
@@ -190,7 +201,7 @@ class ReactionServiceORM:
             return {"detail": "Successfully deleted"}
 
     @staticmethod
-    def can_manage_comment(current_role: Role, owner_role: Role, is_owner: bool) -> bool:
+    def can_manage_comment(current_role: Role, owner_role: Role, is_owner: bool):
         if is_owner or current_role == Role.admin:
             return True
         if current_role == Role.mod and owner_role not in (Role.admin, Role.mod):

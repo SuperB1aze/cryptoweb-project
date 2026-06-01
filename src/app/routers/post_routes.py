@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from pydantic.json_schema import SkipJsonSchema
 
 from src.app.schemas.post import PostDefaultInfoAddDTO, PostFullInfoDTO, PostPageInfoDTO
+from src.app.dependencies import PaginationParams
 from infrastructure.db.main_models import Role, UsersOrm
 
 from src.domain.services.user_service import UserServiceORM
@@ -17,8 +18,8 @@ CurrentUser: TypeAlias = Annotated[
 ]
 
 @router_post.get("/", summary="get the list of all posts", response_model=list[PostFullInfoDTO])
-async def postslist():
-    post_list = await PostServiceORM.show_all_posts()
+async def postslist(pagination: Annotated[PaginationParams, Depends()]):
+    post_list = await PostServiceORM.show_all_posts(limit=pagination.limit, offset=pagination.offset)
     return post_list
 
 @router_post.get("/{user_id}", summary="get the list of all posts made by user", response_model=list[PostPageInfoDTO])

@@ -33,8 +33,8 @@ class UserServiceORM(BaseServiceORM):
         )
 
     @classmethod
-    async def show_all_users(cls):
-        return await cls.show_all()
+    async def show_all_users(cls, limit: int = 20, offset: int = 0):
+        return await cls.show_all(limit=limit, offset=offset)
 
     @classmethod
     async def show_profile(cls, user_id: int):
